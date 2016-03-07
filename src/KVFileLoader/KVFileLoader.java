@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package test;
+package KVFileLoader;
 
 import KVFileObserver.KVFileObserver;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.io.IOException;
  *
  * @author hansone123
  */
-public class test {
+public class KVFileLoader {
     /**
      * @param args the command line arguments
      */
