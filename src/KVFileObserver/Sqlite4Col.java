@@ -5,19 +5,10 @@
  */
 package KVFileObserver;
 
-import static KVFileObserver.Sqlite4ColumnType.*;
+import KVFileObserver.Sqlite4ColumnType;
 import java.util.Arrays;
 
-/**
- *
- * @author hansone123
- */
-enum Sqlite4ColumnType {
-    STR , UTF8, UTF16LE, UTF16BE,
-    BLOB, NULL, ZERO, ONE, INT,
-    REAL, OTHER
-    
-}
+
 public class Sqlite4Col {
     private String name;
     private byte[] value ;
@@ -32,19 +23,19 @@ public class Sqlite4Col {
             case STR:
                 byte firstByte = valueOfColumn[0];
                 if (firstByte > (byte)0x02) {
-                    this.type = UTF8;
+                    this.type = Sqlite4ColumnType.UTF8;
                     this.setValue(valueOfColumn);                    
                 }
                 if (firstByte == (byte)0x00) {
-                    this.type = UTF8;
+                    this.type = Sqlite4ColumnType.UTF8;
                     this.setValue(Arrays.copyOfRange(valueOfColumn, 1, valueOfColumn.length));
                 }
                 if (firstByte == (byte)0x01) {
-                    this.type = UTF16LE;
+                    this.type = Sqlite4ColumnType.UTF16LE;
                     this.setValue(Arrays.copyOfRange(valueOfColumn, 1, valueOfColumn.length));
                 }
                 if (firstByte == (byte)0x02) {
-                    this.type = UTF16BE;
+                    this.type = Sqlite4ColumnType.UTF16BE;
                     this.setValue(Arrays.copyOfRange(valueOfColumn, 1, valueOfColumn.length));
                 }
                 break;
