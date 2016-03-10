@@ -34,14 +34,15 @@ public class KVFileObserver extends FileObserver{
     public int pushToPhoenix(KVFile kvfile) {
         
         for (Sqlite4Record record:kvfile.toSqlite4Records()) {
-            this.sendAQuery(record);
-            
+            this.sendAQuery(record);            
         }
         int SuccessedNumberOfRecord = 0;
         return SuccessedNumberOfRecord;
     }
     public boolean sendAQuery(Sqlite4Record record) {
-        System.out.println("table id: " + record.getTableID());
+        TableSchema schema = new TableSchema();
+        schema.readFromFile("schema//" + String.valueOf(record.getTableID()));
+        schema.show();
         for (Sqlite4Col col : record.getColumns()) {
             col.show();
             Sqlite4Decoder decoder = new Sqlite4Decoder();

@@ -35,6 +35,9 @@ public class Sqlite4Record {
     public int getTableID() {
         return this.tableID;
     }
+    public int getColNum() {
+        return this.columns.size();
+    }
     public Vector<Sqlite4Col> getColumns() {
         return this.columns;
     }

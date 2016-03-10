@@ -23,9 +23,8 @@ public class KVFileLoader {
             return;
         }
         
-            kvfileObserver.setFileExtension(".kv");   
+        kvfileObserver.setFileExtension(".kv");   
         
-        kvfileObserver.setFileExtension("");
         kvfileObserver.keepWatchOnDirectoryAndDoJob();
             
     }

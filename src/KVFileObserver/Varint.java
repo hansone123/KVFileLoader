@@ -16,7 +16,7 @@ import java.util.Vector;
  * @author Hanson
  */
 public class Varint {
-    public int value;
+    private int value;
     private int size;
     public Varint(){
         this.size = 0;
