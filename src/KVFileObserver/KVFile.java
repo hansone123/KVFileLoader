@@ -17,37 +17,43 @@ import java.util.Vector;
  * @author hansone123
  */
 public class KVFile {
-    private byte[] content;
+    private byte[] data;
     private String name;
     
     public KVFile() {
     }
     public KVFile(String name, byte[] KVFileData) {
         this.name = name;     
-        this.content = KVFileData.clone();
+        this.data = KVFileData.clone();
     }
     public KVFile(String name) {
         this.name = name;     
     }
-    public void readAndRenderKVFile(String fileName) throws FileNotFoundException, IOException {
-           
-        BufferedInputStream file = new BufferedInputStream(new FileInputStream(fileName));
-        byte[] buf = new byte[file.available()];
-        file.read(buf, 0, file.available());
-        this.set(buf);   
-        System.out.println("Open file: " + this.getName());
-        System.out.println("file size: " + this.getSize());
-        file.close();
+    public void readAndRenderKVFile() {
+        BufferedInputStream file;
+        try{   
+            file = new BufferedInputStream(new FileInputStream(this.name));
+            byte[] buf = new byte[file.available()];
+            file.read(buf, 0, file.available());
+            file.close();
+            this.setData(buf);   
+        } catch(Exception e) {
+            System.out.println("KVFile read failed.");
+            return;
+        }
+        
+        System.out.print("Open file: " + this.getName());
+        System.out.println("   size: " + this.getSize());
     }
-    private void set(byte[] kvFileData) {
-        this.content = kvFileData.clone();
+    private void setData(byte[] kvFileData) {
+        this.data = kvFileData.clone();
     }
     
     public byte[] getData() {
-        return this.content;
+        return this.data;
     }
     public int getSize() {
-        return this.content.length;
+        return this.data.length;
     }
     public String getName() {
         return this.name;
@@ -61,15 +67,15 @@ public class KVFile {
 //            System.out.println("ofst:" + ofst);
             KVpair kvpair = new KVpair();
             //read key
-            Varint keyHeader = new Varint(Arrays.copyOfRange(this.content, ofst, ofst + 4));
+            Varint keyHeader = new Varint(Arrays.copyOfRange(this.data, ofst, ofst + 4));
             ofst += keyHeader.getSize();
-            kvpair.setKey(Arrays.copyOfRange(this.content, ofst, ofst + keyHeader.getValue()));
+            kvpair.setKey(Arrays.copyOfRange(this.data, ofst, ofst + keyHeader.getValue()));
             ofst += kvpair.getKeySize();        
             //read value
-            Varint valueHeader = new Varint(Arrays.copyOfRange(this.content, ofst, ofst + 4));
+            Varint valueHeader = new Varint(Arrays.copyOfRange(this.data, ofst, ofst + 4));
 //            valueHeader.show();
             ofst += valueHeader.getSize();
-            kvpair.setValue(Arrays.copyOfRange(this.content, ofst, ofst + valueHeader.getValue()));
+            kvpair.setValue(Arrays.copyOfRange(this.data, ofst, ofst + valueHeader.getValue()));
             ofst += kvpair.getValueSize();
             
             //add pair in kvpairs
@@ -82,11 +88,9 @@ public class KVFile {
     public Vector<Sqlite4Record> toSqlite4Records() {        
 //        System.out.println("Get " + kvpairs.size() + " KVpairs in file.");
         Vector<Sqlite4Record> records = new Vector<Sqlite4Record>();
-        
         for (KVpair pair:this.toKVPairs()) {
             records.addElement(pair.toSqlite4Record());
         }
-        
         return records;
     }
     public static void main(String args[]) {

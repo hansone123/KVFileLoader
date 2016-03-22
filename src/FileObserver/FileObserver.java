@@ -5,11 +5,8 @@
  */
 package FileObserver;
 
-import java.io.BufferedInputStream;
+import FileObserver.Job.Job;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Vector;
 
 /**
@@ -18,6 +15,8 @@ import java.util.Vector;
  */
 public class FileObserver {
     
+    private Job job;
+    private String fileName;
     public String directoryPath;
     public String fileExtension;
     
@@ -25,59 +24,70 @@ public class FileObserver {
         this.directoryPath = "";
         this.fileExtension = "";
     }
+    public void setJob(Job job) {
+        this.job = job;
+    }
     public void setFileExtension(String extension) {
         this.fileExtension = extension;
+        System.out.println("FileObserver: Extension is set to \"" + this.fileExtension + "\"");
     }
     public boolean setValidDirectoryPath(String dirPath) {
-        
+        if (!this.dirIsExisted(dirPath)) {
+            System.out.println("FileObserver: directory is not existed.");
+            return false;
+        }  
         this.directoryPath = dirPath;    
-        return this.dirIsExisted(this.directoryPath);
+        System.out.println("FileObserver: directory is set to \"" + this.directoryPath + "\"");
+        return true;
     }
     
     private boolean dirIsExisted(String dir) {
         
         File directory = new File(dir);
         if ((directory.exists()  && directory.isDirectory())) {
-            System.out.println("FileObserver directory path set to: " + this.directoryPath);
             return true;
         }
         return false;
     }
     
-    private String chooseFile() {
-        String result = "";
+    private void chooseFile() {
         if (this.dirIsEmpty()) {
 //            System.out.println("Directory is empty");
-            return result;
+            this.fileName = "";
+            return;
         }
         
-        Vector<String> files = this.getMatchedFiles();
+        Vector<String> files = this.getMatchedFilesName();
         
-        if (files.isEmpty())
-            return null;
+        if (files.isEmpty()) {
+            this.fileName = "";
+            return;   
+        }
         
+        String result;
         result = files.firstElement();
         for (String file : files) {
             if (result.compareTo(file) > 0)
                 result = file;
         }
-        result = this.directoryPath + "//" + result;
-        System.out.println("Choose file: " + result);
+        result = this.directoryPath + "//" + result;       
         
-        return result;
+        this.fileName = result;
+        System.out.println("Choose file: " + result);
     }
-    private Vector<String> getMatchedFiles() {
+    private Vector<String> getMatchedFilesName() {
         
         File directory = new File(this.directoryPath);
         Vector<String> matchedFiles  = new Vector<String>();
         
-        for (String fileName:directory.list()) {            
+        for (String fileName:directory.list()) {           
             if (this.fileExtension.equals("")) {
-                if (!fileName.contains(this.fileExtension)) {
-                    continue;
+                matchedFiles.addElement(fileName);
+            } else {
+                if (fileName.contains(this.fileExtension)) {
+                    matchedFiles.addElement(fileName);
                 }
             }
-            matchedFiles.addElement(fileName);
         }
         return matchedFiles;
     }
@@ -86,60 +96,32 @@ public class FileObserver {
         String[] allFiles = directory.list();
         return allFiles.length < 1;
     }
-    public void doJob(String Filename ) {
-        System.out.println("Do the job .");
+    public void doJob() {
+         if (this.fileName.equals("")) {
+             return;
+         }
+         System.out.println("Job start.");
+         this.job.execute(this.fileName);
+         
+        System.out.println("Job done.");
     }
+
     public void keepWatchOnDirectoryAndDoJob() {
-        
+        System.out.println("Start Watching...");
         while(true) {
-            String fileName = this.chooseFile();
-            
-            if (fileName != "") {
-                this.doJob(fileName);
-                this.deleteFile(fileName);
-            }
-            
-            
+            this.chooseFile();
+            this.doJob();
         }
     }
 //    public String observeDirectory() {
 //        
 //    }
     
-    public boolean deleteFile(String fileName) {
-        
-        File file = new File(fileName);
-        if (file.delete()) {
-            System.out.println(fileName + " is deleted .");
-            return true;
-        } 
-        
-        System.out.println(fileName + "deletion failed .");
-        return false;
-    }
+    
     
             
     
     
-    /**
-     * @param args the command line arguments
-     * args[0]: is the file extension we watch
-     */
-    public static void main(String[] args) throws IOException {
-        
-        FileObserver fileObserver = new FileObserver();
-        if( !fileObserver.setValidDirectoryPath("/tmp/KVoutput") )  {            
-            return;
-        }
-        
-        if (args.length >0) {
-            String fileExtesion = args[0];
-            fileObserver.setFileExtension(fileExtesion);            
-        }
-        
-        fileObserver.setFileExtension("");
-        fileObserver.keepWatchOnDirectoryAndDoJob();
-        
-    }
+
     
 }
