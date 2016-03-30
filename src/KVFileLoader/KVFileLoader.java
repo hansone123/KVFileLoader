@@ -24,8 +24,8 @@ public class KVFileLoader {
             dirWatched = args[0];
             fileExtesion = args[1];
         } else {
-            dirWatched = "testFiles";
-            fileExtesion = ".kv";
+            System.out.println("Need two parameters  DirectoryPath(first), FileExtension(second)");
+            return;
         }
         
         FileObserver fileObserver = new FileObserver();
@@ -36,14 +36,6 @@ public class KVFileLoader {
         KVFileLoaderJob job = new KVFileLoaderJob();
         fileObserver.setJob(job);
         fileObserver.keepWatchOnDirectoryAndDoJob();    
-//        KVFileObserver kvfileObserver = new KVFileObserver();
-//        if( !kvfileObserver.setValidDirectoryPath("/tmp/KVoutput") )  {            
-//            return;
-//        }
-//        
-//        kvfileObserver.setFileExtension(".kv");   
-//        
-//        kvfileObserver.keepWatchOnDirectoryAndDoJob();
             
     }
 }
