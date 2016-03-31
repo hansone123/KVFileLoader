@@ -19,12 +19,14 @@ public class KVFileLoader {
      */
     public static void main(String[] args) throws IOException {
         String dirWatched;
+        String schemaDirectory;
         String fileExtesion;
-        if (args.length == 2) {
+        if (args.length == 3) {
             dirWatched = args[0];
             fileExtesion = args[1];
+            schemaDirectory = args[2];
         } else {
-            System.out.println("Need two parameters  DirectoryPath(first), FileExtension(second)");
+            System.out.println("Need third parameters: DirectoryWeWatched(first), FileExtension(second), SchemaDirectory(third)");
             return;
         }
         
@@ -34,6 +36,7 @@ public class KVFileLoader {
         }
         fileObserver.setFileExtension(fileExtesion);      
         KVFileLoaderJob job = new KVFileLoaderJob();
+        job.loadTableSchema(schemaDirectory);
         fileObserver.setJob(job);
         fileObserver.keepWatchOnDirectoryAndDoJob();    
             

@@ -26,9 +26,9 @@ import java.util.Vector;
 public class KVFileLoaderJob implements Job{
     
     private String fileName;
-    private Vector<TableSchema> schema;
+    private Vector<TableSchema> schemas;
     public KVFileLoaderJob() {
-        this.schema = new Vector();
+        this.schemas = new Vector();
     }
     public KVFile readAndRenderKVFile(String fileName) throws FileNotFoundException, IOException {
            
@@ -43,9 +43,16 @@ public class KVFileLoaderJob implements Job{
         return kvfile;
     }
     public void loadTableSchema(String dirPath) {
-//        TableSchema schema = new TableSchema();
-//        schema.readFromFile("schema//" + String.valueOf(record.getTableID()));
-//        schema.show();
+        
+        File directory = new File(dirPath);
+        for (String file:directory.list()) {
+            TableSchema schema = new TableSchema();
+            if (schema.readFromFile(dirPath + "//" + file)) {
+                schema.show();
+                this.schemas.add(schema);
+            }
+        }
+        
     }
     public boolean pushToPhoenix(KVFile kvfile) {
         

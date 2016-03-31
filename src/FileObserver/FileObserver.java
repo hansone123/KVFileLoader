@@ -66,7 +66,6 @@ public class FileObserver {
     private void getMatchedFilesList() {
         
         File directory = new File(this.directoryPath);
-        
         for (String fileName:directory.list()) {           
             if (this.fileExtension.equals("")) {
                 this.filesName.addElement(fileName);
@@ -93,10 +92,12 @@ public class FileObserver {
     public void keepWatchOnDirectoryAndDoJob() {
         System.out.println("Start Watching...");
         while(true) {
+            
             this.getMatchedFilesList();
             this.sortFilesName();
             this.doJob();
             this.cleanList();
+            
         }
     }
 //    public String observeDirectory() {
