@@ -26,7 +26,9 @@ import java.util.Vector;
 public class KVFileLoaderJob implements Job{
     
     private String fileName;
+    private Vector<TableSchema> schema;
     public KVFileLoaderJob() {
+        this.schema = new Vector();
     }
     public KVFile readAndRenderKVFile(String fileName) throws FileNotFoundException, IOException {
            
@@ -40,7 +42,11 @@ public class KVFileLoaderJob implements Job{
         
         return kvfile;
     }
-    
+    public void loadTableSchema(String dirPath) {
+//        TableSchema schema = new TableSchema();
+//        schema.readFromFile("schema//" + String.valueOf(record.getTableID()));
+//        schema.show();
+    }
     public boolean pushToPhoenix(KVFile kvfile) {
         
         int SuccessedNumberOfRecord = 0;
@@ -62,9 +68,7 @@ public class KVFileLoaderJob implements Job{
     
     public boolean sendAQuery(Sqlite4Record record) {
         
-        TableSchema schema = new TableSchema();
-        schema.readFromFile("schema//" + String.valueOf(record.getTableID()));
-        schema.show();
+        
         for (Sqlite4Col col : record.getColumns()) {
             col.show();
             Sqlite4Decoder decoder = new Sqlite4Decoder();
