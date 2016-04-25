@@ -3,20 +3,22 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package FileObserver.Job;
+package com.dslab.kvloader.fileobserver.Job;
 
-import Dataset.KVDataset;
-import FileObserver.FileObserver;
-import FileObserver.Job.Job;
-import KVFileObserver.KVFile;
-import KVFileObserver.Sqlite4Col;
-import KVFileObserver.Sqlite4Decoder;
-import KVFileObserver.Sqlite4Record;
-import KVFileObserver.TableSchema;
+import com.dslab.kvLoader.Dataset.KVDataset;
+import com.dslab.kvloader.fileobserver.Observer.FileObserver;
+import com.dslab.kvloader.fileobserver.Job.Job;
+import com.dslab.kvloader.KVdata.KVFile;
+import com.dslab.kvloader.KVdata.Sqlite4Col;
+import com.dslab.kvloader.KVdata.Sqlite4Decoder;
+import com.dslab.kvloader.KVdata.Sqlite4Record;
+import com.dslab.kvloader.KVdata.TableSchema;
 import com.cdclab.loader.core.LoaderConf;
 import com.cdclab.loader.dataset.Dataset.Column;
 import com.cdclab.loader.dbClient.DBClient;
 import com.cdclab.loader.dbClient.PhoenixDBClient;
+import com.cdclab.loader.dbClient.TableName;
+import com.cdclab.loader.dbClient.Writer;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.JDBCType;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,38 +40,35 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
  * @author hansone123
  */
 public class KVFileLoaderJob implements Job{
-    private PhoenixDBClient phoenixDbClient;
-    private ArrayList<TableSchema> schemas;
-    public KVFileLoaderJob() {
+    private LoaderConf loaderConf;
+    private DBClient phoenixDbClient;
+    private final ArrayList<TableSchema> schemas;
+    
+    public KVFileLoaderJob(String schemaDir, String dbURL) {
         this.schemas = new ArrayList();
-    }
-    public boolean setUp(String schemaDir, String dbURL) {
         this.loadTableSchema(schemaDir);
         try {
             this.initialDBClient(dbURL);
         } catch (ClassNotFoundException|SQLException ex) {
-           return false; 
+           System.out.println("Phoenix client create failed.");
         }
-        return true;
     }
-    private KVFile readAndRenderKVFile(String fileName) throws FileNotFoundException, IOException {
-           
-        BufferedInputStream file = new BufferedInputStream(new FileInputStream(fileName));
-        byte[] buf = new byte[file.available()];
-        file.read(buf, 0, file.available());
-        KVFile kvfile = new KVFile(fileName, buf);   
-        
-        System.out.println("Open file: " + kvfile.getName());
-        System.out.println("file size: " + kvfile.getSize());
-        
-        return kvfile;
-    }
+//    public boolean setUp(String schemaDir, String dbURL) {
+//        this.loadTableSchema(schemaDir);
+//        try {
+//            this.initialDBClient(dbURL);
+//        } catch (ClassNotFoundException|SQLException ex) {
+//           System.out.println("Phoenix client create failed.");
+//           return false; 
+//        }
+//        return true;
+//    }
     private void initialDBClient(String url) throws ClassNotFoundException, SQLException {
         Configuration config = HBaseConfiguration.create();
         //config.set("phoenix.query.dateFormatTimeZone", "GMT+6");
         config.set(LoaderConf.LOADER_MODE, "SQL_QUERY");
-        LoaderConf conf= new LoaderConf(config);
-        this.phoenixDbClient= new PhoenixDBClient(url, conf.getWriteThreadNumber());
+        loaderConf= new LoaderConf(config);
+        this.phoenixDbClient= new PhoenixDBClient(url, loaderConf.getWriteThreadNumber());
     }
     private void loadTableSchema(String dirPath) {
         
@@ -86,20 +86,23 @@ public class KVFileLoaderJob implements Job{
         
         List<Sqlite4Record> records = kvfile.toSqlite4Records();
         List<KVDataset> datasets = this.createDatasets(this.getTablesSchema());
+        
         this.renderDatasets(datasets, records);
         return datasets;
         
     }
     private void renderDatasets(List<KVDataset> datasets, List<Sqlite4Record> records) {
         
-        records.stream().forEach((record) -> {
-            datasets.stream().filter((dataset) -> (dataset.getTableID() == record.getTableID())).forEach((dataset) -> {
-                this.renderDataset(dataset, record);
-            });
-        records.remove(record);
-        });
+        for (Sqlite4Record record:records) {
+            for (KVDataset dataset:datasets) {
+                if (dataset.getTableID() == record.getTableID()) {
+                    this.renderDataset(dataset, record);
+                }
+            }
+        }
     }
     private void renderDataset(KVDataset dataset, Sqlite4Record record) {
+        
         List<Column> columns = new ArrayList();
         TableSchema schema = this.schemas.get(dataset.getTableID());
         List<JDBCType> columnType = schema.getColsType();
@@ -145,7 +148,7 @@ public class KVFileLoaderJob implements Job{
     private List<KVDataset> createDatasets(List<TableSchema> schemas) {
         List<KVDataset> datasets = new ArrayList();
         schemas.stream().forEach((schema) -> {
-            datasets.add(new KVDataset(schema.getColsName(), schema.getColsType(), schema.getTableID()));
+            datasets.add(new KVDataset(schema.getColsName(), schema.getColsType(), schema.getTableID(), schema.getTableName()));
         });
         return datasets;
     }
@@ -169,21 +172,55 @@ public class KVFileLoaderJob implements Job{
         }
         return true;
     }
-    private void deleteFile(String fileName) {
-        File file = new File(fileName);
-        file.delete();
+    private void deleteFile(String filePath) {
+        File file = new File(filePath);
+        System.out.println("Delete " + filePath + "...");
+        if (!file.delete()) {
+            System.out.println("failed.");
+        }        
+        System.out.println("Done.");
+        
     }
     @Override
-    public void execute(String fileName) {
-        KVFile kvfile = new KVFile(fileName);        
-        kvfile.readAndRenderKVFile();
+    public void execute(final String fileName) {
+        KVFile kvfile = new KVFile();        
+        kvfile.readAndRenderKVFile(fileName);
         List<KVDataset> datasets = this.createAndRenderDataset(kvfile);
         
+        int successWrite = 0;
         for (KVDataset dataset:datasets) {
-            
+            dataset.showInfo();
+//            successWrite += this.writeDataset(dataset);
         }
+        System.out.println("Num of datasets " + datasets.size());
+        System.out.println("Success Write: " + successWrite);
         
         this.deleteFile(fileName);
     }
-    
+    public int writeDataset(KVDataset dataset) {
+        final String tableName = dataset.getTableName();
+        try(Writer writer= new Writer(phoenixDbClient, loaderConf, new TableName(tableName), loaderConf.getBatchNumber())){
+//            writer.setPreWriteOperation((Column col)->{
+//                if(col.getKey()=="Name"){
+//                    System.out.println("preWrite Name: "+col.getValue().orElse("NULL"));
+//                }
+//            });
+//            
+//            writer.setPostWriteOperation((Column col)->{
+//                if(col.getKey()=="Name"){
+//                    System.out.println("postWrite Name: "+col.getValue().orElse("NULL"));
+//                }
+//            });
+//            
+            
+            writer.write(dataset);
+        } catch (SQLException ex) {
+            System.out.println("SQLException: dataset of " + tableName + "tableName write failed.");
+            return 0;
+        } catch (IOException ex) {
+            System.out.println("IOException: dataset of " + tableName + "tableName write failed.");
+            return 0;
+        }
+        return 1;
+    }
 }

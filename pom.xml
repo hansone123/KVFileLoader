@@ -1,26 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.mycompany</groupId>
+    <groupId>com.dslab</groupId>
     <artifactId>KVFileLoader</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+    
+    
+    <properties>
+        <dependency.version>2.10</dependency.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <hadoop.version>2.6.0-cdh5.4.8</hadoop.version>
+        <hbase.version>1.0.0-cdh5.4.8</hbase.version>
+        <main.basedir>${basedir}</main.basedir>
+    </properties>
+    
+    <repositories>
+      <repository>
+        <id>cloudera</id>
+        <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      </repository>
+    </repositories>
+    
     <dependencies>
         <dependency>
             <groupId>com.cdclab</groupId>
             <artifactId>loader</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.2-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${main.basedir}/lib/loader-1.2-SNAPSHOT.jar</systemPath>
         </dependency>
         <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-common</artifactId>
-            <version>1.0.0-cdh5.4.8</version>
-            <type>jar</type>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>${hadoop.version}</version>
+            <!--<scope>provided</scope>-->
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-server</artifactId>
+            <version>${hbase.version}</version>
+            <!--<scope>provided</scope>-->
+        </dependency>
+        
     </dependencies>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
+    
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${dependency.version}</version>
+                <executions>
+                    <execution>
+                         <id>copy</id>
+                         <goals>
+                             <goal>copy-dependencies</goal>
+                         </goals>
+                         <configuration>
+                              <excludeScope>provided</excludeScope>
+                              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.4</version>
+                    <configuration>
+                            <archive>
+                                    <manifest>
+                                            <addClasspath>true</addClasspath>
+                                             <classpathPrefix>${main.basedir}/lib</classpathPrefix>
+                                             <mainClass>com.dslab.kvloader.Loader.KVFileLoader</mainClass>
+                                    </manifest>
+                            </archive>
+                    </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    
+    
 </project>

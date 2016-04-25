@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package KVFileObserver;
+package com.dslab.kvloader.KVdata;
 
-import KVFileObserver.Sqlite4ColumnType;
+import com.dslab.kvloader.KVdata.Sqlite4ColumnType;
 import java.util.Arrays;
 
 

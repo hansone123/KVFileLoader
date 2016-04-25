@@ -3,12 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Test;
+package com.dslab.kvloader.KVdata;
 
 /**
  *
  * @author hansone123
  */
-public class testKVFile {
+public enum Sqlite4ColumnType {
+    STR , UTF8, UTF16LE, UTF16BE,
+    BLOB, NULL, ZERO, ONE, INT,
+    REAL, OTHER
     
 }

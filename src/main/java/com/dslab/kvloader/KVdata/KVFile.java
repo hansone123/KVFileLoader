@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package KVFileObserver;
+package com.dslab.kvloader.KVdata;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -20,21 +20,16 @@ import java.util.Vector;
  */
 public class KVFile {
     private byte[] data;
-    private String name;
     
     public KVFile() {
     }
-    public KVFile(String name, byte[] KVFileData) {
-        this.name = name;     
+    public KVFile(byte[] KVFileData) {  
         this.data = KVFileData.clone();
     }
-    public KVFile(String name) {
-        this.name = name;     
-    }
-    public void readAndRenderKVFile() {
+    public void readAndRenderKVFile(String filePath) {
         BufferedInputStream file;
         try{   
-            file = new BufferedInputStream(new FileInputStream(this.name));
+            file = new BufferedInputStream(new FileInputStream(filePath));
             byte[] buf = new byte[file.available()];
             file.read(buf, 0, file.available());
             file.close();
@@ -44,7 +39,7 @@ public class KVFile {
             return;
         }
         
-        System.out.print("Open file: " + this.getName());
+        System.out.print("Open file: " + filePath);
         System.out.println("   size: " + this.getSize());
     }
     private void setData(byte[] kvFileData) {
@@ -56,9 +51,6 @@ public class KVFile {
     }
     public int getSize() {
         return this.data.length;
-    }
-    public String getName() {
-        return this.name;
     }
     private ArrayList<KVpair> toKVPairs() {
         
@@ -95,12 +87,5 @@ public class KVFile {
         }
         return records;
     }
-    public static void main(String args[]) {
-        byte[] test = {0x16, 0x17, 0x18};
-        KVFile kvf = new KVFile("test", test);
-        System.out.println("KVFile length: " + kvf.getSize());
-        System.out.print("KVFile content: ");
-        for(int i=0; i<kvf.getSize(); i++)
-            System.out.print(kvf.getData()[i] + " ");
-    }
+    
 }

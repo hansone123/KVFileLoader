@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package FileObserver;
+package com.dslab.kvloader.fileobserver.Observer;
 
-import FileObserver.Job.Job;
+import com.dslab.kvloader.fileobserver.Job.Job;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;

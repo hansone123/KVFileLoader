@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package KVFileLoader;
+package com.dslab.kvloader.Loader;
 
-import FileObserver.FileObserver;
-import FileObserver.Job.KVFileLoaderJob;
+import com.dslab.kvloader.fileobserver.Observer.FileObserver;
+import com.dslab.kvloader.fileobserver.Job.KVFileLoaderJob;
 
 /**
  *
@@ -20,12 +20,12 @@ public class KVFileLoader {
         String dirWatched;
         String schemaDirectory;
         String fileExtesion;
-        String dbclient;
+        String dbclientURL;
         if (args.length == 4) {
             dirWatched = args[0];
             fileExtesion = args[1];
             schemaDirectory = args[2];
-            dbclient = args[3];
+            dbclientURL = args[3];
         } else {
             System.out.println("Need four parameters: DirectoryWeWatched(first), FileExtension(second), SchemaDirectory(third), dbclientURL(forth)");
             return;
@@ -36,8 +36,7 @@ public class KVFileLoader {
                 return;
         }
         fileObserver.setFileExtension(fileExtesion);      
-        KVFileLoaderJob job = new KVFileLoaderJob();        
-        job.setUp(schemaDirectory, dbclient);
+        KVFileLoaderJob job = new KVFileLoaderJob(schemaDirectory, dbclientURL);    
         
         fileObserver.setJob(job);
         fileObserver.keepWatchOnDirectoryAndDoJob(); 
