@@ -38,12 +38,13 @@ public class Sqlite4Decoder {
     }
     
     public static long fromBytestoInteger64(byte[] input) {
-        if (!(input == null) || input.length==0)
+        if ((input == null) || input.length==0)
             return 0;
         long result = input[0];
         for (int iByte=1; iByte<input.length; iByte++) {
             result = result*256 + input[iByte];
         }
+        
         return result;
     }
     public static String charsetProcess(byte[] inputStr,Sqlite4ColumnType type) {

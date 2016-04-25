@@ -136,6 +136,7 @@ public class Sqlite4Col {
         System.out.println("  name: " + this.getName());
         System.out.println("  type: " + this.getType());
         System.out.println("  size: " + this.getSize());
+        System.out.println("  value: " + this.toString());
     }
     
     public static void main(String args[]) {

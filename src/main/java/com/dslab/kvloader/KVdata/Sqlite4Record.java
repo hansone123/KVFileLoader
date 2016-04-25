@@ -42,5 +42,11 @@ public class Sqlite4Record {
     public List<Sqlite4Col> getColumns() {
         return this.columns;
     }
-    
+    public void show() {
+        System.out.println("table id: " + this.getTableID());
+        System.out.println("table name: " + this.getTableName());
+        for (Sqlite4Col col:this.getColumns()) {
+            col.show();
+        }
+    }
 }

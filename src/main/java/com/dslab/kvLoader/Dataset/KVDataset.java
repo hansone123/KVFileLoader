@@ -29,15 +29,19 @@ public class KVDataset extends SimpleDataset {
         return this.tableName;
     }
     public void showInfo() {
-        
+        System.out.println("\nDataset:");
+        System.out.println("table_id: " + this.getTableID());
+        System.out.println("table_name: " + this.getTableName());
         System.out.println(this.toString());
         Iterator<Dataset.Row> rowItr= this.iterator();        
         while(rowItr.hasNext()){
             Dataset.Row row= rowItr.next();
             Iterator<Column> colItr= row.iterator();
             while(colItr.hasNext()){
-               System.out.println(colItr.next().toString());
+                Column col = colItr.next();
+               System.out.println(col.toString());
             }
         }
+        System.out.println();
     }
 }

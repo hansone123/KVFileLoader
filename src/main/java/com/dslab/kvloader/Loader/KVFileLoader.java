@@ -36,8 +36,8 @@ public class KVFileLoader {
                 return;
         }
         fileObserver.setFileExtension(fileExtesion);      
-        KVFileLoaderJob job = new KVFileLoaderJob(schemaDirectory, dbclientURL);    
-        
+        KVFileLoaderJob job = new KVFileLoaderJob();    
+        job.setUp(schemaDirectory, dbclientURL);
         fileObserver.setJob(job);
         fileObserver.keepWatchOnDirectoryAndDoJob(); 
             

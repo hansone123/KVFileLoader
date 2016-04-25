@@ -90,7 +90,6 @@ public class KVpair {
     private int decodeTableID() {
         Varint tableID = new Varint();
         tableID.set(this.key);
-        
         return tableID.getValue();
     }
     

@@ -19,6 +19,7 @@ import com.cdclab.loader.dbClient.DBClient;
 import com.cdclab.loader.dbClient.PhoenixDBClient;
 import com.cdclab.loader.dbClient.TableName;
 import com.cdclab.loader.dbClient.Writer;
+import com.dslab.kvloader.KVdata.SchemaCache;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +30,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,27 +44,21 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 public class KVFileLoaderJob implements Job{
     private LoaderConf loaderConf;
     private DBClient phoenixDbClient;
-    private final ArrayList<TableSchema> schemas;
+//    private final ArrayList<TableSchema> schemas;
+    private SchemaCache schemaCache;
     
-    public KVFileLoaderJob(String schemaDir, String dbURL) {
-        this.schemas = new ArrayList();
+    public KVFileLoaderJob() {
+    }
+    public boolean setUp(String schemaDir, String dbURL) {
         this.loadTableSchema(schemaDir);
         try {
             this.initialDBClient(dbURL);
         } catch (ClassNotFoundException|SQLException ex) {
            System.out.println("Phoenix client create failed.");
+           return false; 
         }
+        return true;
     }
-//    public boolean setUp(String schemaDir, String dbURL) {
-//        this.loadTableSchema(schemaDir);
-//        try {
-//            this.initialDBClient(dbURL);
-//        } catch (ClassNotFoundException|SQLException ex) {
-//           System.out.println("Phoenix client create failed.");
-//           return false; 
-//        }
-//        return true;
-//    }
     private void initialDBClient(String url) throws ClassNotFoundException, SQLException {
         Configuration config = HBaseConfiguration.create();
         //config.set("phoenix.query.dateFormatTimeZone", "GMT+6");
@@ -71,22 +67,22 @@ public class KVFileLoaderJob implements Job{
         this.phoenixDbClient= new PhoenixDBClient(url, loaderConf.getWriteThreadNumber());
     }
     private void loadTableSchema(String dirPath) {
-        
+        List<TableSchema> schemas = new ArrayList();
         File directory = new File(dirPath);
         for (String file:directory.list()) {
+            System.out.println("file under "+dirPath + file);
             TableSchema schema = new TableSchema();
             if (schema.readFromFile(dirPath + "//" + file)) {
                 schema.show();
-                this.schemas.add(schema);
+                schemas.add(schema);
             }
         }
-        
+        this.schemaCache = new SchemaCache(schemas);
     }
     private  List<KVDataset> createAndRenderDataset(KVFile kvfile) {
         
         List<Sqlite4Record> records = kvfile.toSqlite4Records();
-        List<KVDataset> datasets = this.createDatasets(this.getTablesSchema());
-        
+        List<KVDataset> datasets = this.createDatasets(this.schemaCache.iterator());
         this.renderDatasets(datasets, records);
         return datasets;
         
@@ -104,9 +100,10 @@ public class KVFileLoaderJob implements Job{
     private void renderDataset(KVDataset dataset, Sqlite4Record record) {
         
         List<Column> columns = new ArrayList();
-        TableSchema schema = this.schemas.get(dataset.getTableID());
+        TableSchema schema = this.getTableSchemaWithId(dataset.getTableID());
         List<JDBCType> columnType = schema.getColsType();
         List<String> columnName = schema.getColsName();
+        
         record.getColumns().stream().map((col) -> {
             int index = col.getIndex();
             JDBCType type = columnType.get(index);
@@ -145,32 +142,23 @@ public class KVFileLoaderJob implements Job{
         }
         return column;
     }
-    private List<KVDataset> createDatasets(List<TableSchema> schemas) {
+    private List<KVDataset> createDatasets(Iterator<TableSchema> schemas) {
         List<KVDataset> datasets = new ArrayList();
-        schemas.stream().forEach((schema) -> {
+        while(schemas.hasNext()) {
+            TableSchema schema = schemas.next();
             datasets.add(new KVDataset(schema.getColsName(), schema.getColsType(), schema.getTableID(), schema.getTableName()));
-        });
+        }
         return datasets;
     }
-    private List<TableSchema> getTablesSchema() {
-        return this.schemas;
-    }
     private TableSchema getTableSchemaWithId(int id) {
-        for (TableSchema schema:this.schemas) {
+        Iterator<TableSchema> schemas = this.schemaCache.iterator();
+        while(schemas.hasNext()) {
+            TableSchema schema = schemas.next();
             if (schema.getTableID() == id) {
                 return schema;
             }
         }
         return null;
-    }
-    private boolean sendAQuery(Sqlite4Record record) {
-        
-        for (Sqlite4Col col : record.getColumns()) {
-            col.show();
-            Sqlite4Decoder decoder = new Sqlite4Decoder();
-            System.out.println("  value: " + record.toString());
-        }
-        return true;
     }
     private void deleteFile(String filePath) {
         File file = new File(filePath);
