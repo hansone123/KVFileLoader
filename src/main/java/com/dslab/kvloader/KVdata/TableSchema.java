@@ -51,6 +51,7 @@ public class TableSchema {
                 String columnName = st.nextToken();
                 JDBCType ColumnType = this.toJDBCType(st.nextToken());
                 if (ColumnType == JDBCType.OTHER) {
+                    System.out.println("Schema is not fitting the JDBC format.");
                     return false;
                 }
                 this.addColumn(columnName, ColumnType);    

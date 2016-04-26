@@ -52,14 +52,14 @@ public class KVFileLoaderJob implements Job{
     public boolean setUp(String schemaDir, String dbURL) {
         this.loadTableSchema(schemaDir);
         try {
-            this.initialDBClient(dbURL);
+            this.initPhoenixClient(dbURL);
         } catch (ClassNotFoundException|SQLException ex) {
            System.out.println("Phoenix client create failed.");
            return false; 
         }
         return true;
     }
-    private void initialDBClient(String url) throws ClassNotFoundException, SQLException {
+    private void initPhoenixClient(String url) throws ClassNotFoundException, SQLException {
         Configuration config = HBaseConfiguration.create();
         //config.set("phoenix.query.dateFormatTimeZone", "GMT+6");
         config.set(LoaderConf.LOADER_MODE, "SQL_QUERY");
@@ -70,7 +70,7 @@ public class KVFileLoaderJob implements Job{
         List<TableSchema> schemas = new ArrayList();
         File directory = new File(dirPath);
         for (String file:directory.list()) {
-            System.out.println("file under "+dirPath + file);
+            System.out.println("Find schema file: "+dirPath + file);
             TableSchema schema = new TableSchema();
             if (schema.readFromFile(dirPath + "//" + file)) {
                 schema.show();
@@ -91,57 +91,15 @@ public class KVFileLoaderJob implements Job{
         
         for (Sqlite4Record record:records) {
             for (KVDataset dataset:datasets) {
-                if (dataset.getTableID() == record.getTableID()) {
-                    this.renderDataset(dataset, record);
+                int dataset_id = dataset.getTableID();
+                if (dataset_id == record.getTableID()) {
+                    TableSchema schema = this.schemaCache.get(dataset_id);
+                    dataset.append(record, schema);
                 }
             }
         }
     }
-    private void renderDataset(KVDataset dataset, Sqlite4Record record) {
-        
-        List<Column> columns = new ArrayList();
-        TableSchema schema = this.getTableSchemaWithId(dataset.getTableID());
-        List<JDBCType> columnType = schema.getColsType();
-        List<String> columnName = schema.getColsName();
-        
-        record.getColumns().stream().map((col) -> {
-            int index = col.getIndex();
-            JDBCType type = columnType.get(index);
-            col.setName(columnName.get(index));
-            Column temp = buildColumnForDatasetType(type, col);
-            return temp;
-        }).filter((temp) -> (temp != null)).forEach((temp) -> {
-            columns.add(temp);
-        });
-        dataset.append(columns);
-    }
-    private Column buildColumnForDatasetType(JDBCType type, Sqlite4Col input) {
-        Column column = null;
-        try{
-            switch(type) {
-                case INTEGER:
-                    column = new Column(JDBCType.INTEGER, input.getName(), Integer.valueOf(input.toString()), input.getIndex());
-                    break;
-                case FLOAT:
-                    column = new Column(JDBCType.FLOAT, input.getName(), Float.valueOf(input.toString()), input.getIndex());
-                    break;
-                case DOUBLE:
-                    column = new Column(JDBCType.DOUBLE, input.getName(), Double.valueOf(input.toString()), input.getIndex());
-                    break;
-                case VARCHAR:
-                    column = new Column(JDBCType.VARCHAR, input.getName(), input.toString(), input.getIndex());
-                    break;
-                case BLOB:
-                    column = new Column(JDBCType.BINARY, input.getName(), input.getValue(), input.getIndex());
-                    break;
-                default:
-                    break;
-             }
-        } catch(Exception e) {
-            return null;
-        }
-        return column;
-    }
+
     private List<KVDataset> createDatasets(Iterator<TableSchema> schemas) {
         List<KVDataset> datasets = new ArrayList();
         while(schemas.hasNext()) {
@@ -150,16 +108,7 @@ public class KVFileLoaderJob implements Job{
         }
         return datasets;
     }
-    private TableSchema getTableSchemaWithId(int id) {
-        Iterator<TableSchema> schemas = this.schemaCache.iterator();
-        while(schemas.hasNext()) {
-            TableSchema schema = schemas.next();
-            if (schema.getTableID() == id) {
-                return schema;
-            }
-        }
-        return null;
-    }
+    
     private void deleteFile(String filePath) {
         File file = new File(filePath);
         System.out.println("Delete " + filePath + "...");

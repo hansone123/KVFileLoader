@@ -27,5 +27,14 @@ public class SchemaCache {
     public int size() {
         return schemas.size();
     }
-    
+    public TableSchema get(int id) {
+        Iterator<TableSchema> schemas = this.schemas.iterator();
+        while(schemas.hasNext()) {
+            TableSchema schema = schemas.next();
+            if (schema.getTableID() == id) {
+                return schema;
+            }
+        }
+        return null;
+    }
 }
